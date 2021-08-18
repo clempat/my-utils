@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useRef } from "react";
+import React, { ChangeEvent, FormEvent, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -25,6 +25,15 @@ export default function YNABConverter(): React.ReactElement {
       return;
     setFile(fileInput.current.files[0]);
   }
+
+  useEffect(
+    function reset() {
+      if (!loading && fileInput.current) {
+        fileInput.current.value = "";
+      }
+    },
+    [loading]
+  );
 
   function handleConverterChange(e: ChangeEvent<HTMLSelectElement>) {
     if (!e.target) return;

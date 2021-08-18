@@ -51,7 +51,7 @@ async function createCsv(data: any, filename: string) {
     const blob = new Blob([parsed], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.setAttribute("href", URL.createObjectURL(blob));
-    link.setAttribute("download", `converted_${filename}`);
+    link.setAttribute("download", filename);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -131,7 +131,9 @@ export function useCSVConverter() {
   useEffect(() => {
     if (!file) return;
     setLoading(true);
-    convertFile(file, converter).then(() => setLoading(false));
+    convertFile(file, converter)
+      .then(() => setLoading(false))
+      .then(() => setFile(undefined));
   }, [setLoading, file, converter]);
 
   return {
