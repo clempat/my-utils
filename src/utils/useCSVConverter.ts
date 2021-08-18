@@ -6,6 +6,7 @@ import stringify from "csv-stringify";
 export enum CONVERTER {
   CONSORS = "CONSORS",
   N26 = "N26",
+  POSTBANK = "POSTBANK",
 }
 
 type Consors = {
@@ -40,6 +41,17 @@ type N26 = {
   "Taux de conversion": string;
 };
 
+type POSTBANK = {
+  Buchungsdatum: string;
+  Wertstellung: string;
+  Umsatzart: string;
+  Buchungsdetails: string;
+  Auftraggeber: string;
+  Empfänger: string;
+  "Betrag (€)": string;
+  "Saldo (€)": string;
+};
+
 async function createCsv(data: any, filename: string) {
   stringify(data, { header: true }, (error, parsed) => {
     if (error) {
@@ -67,6 +79,19 @@ function n262Ynab(input: N26): YNAB {
     Memo: [input.Catégorie, input["Référence de paiement"]]
       .filter(Boolean)
       .join(": "),
+    Inflow: value > 0 ? Math.abs(value).toString() : "",
+    Outflow: value < 0 ? Math.abs(value).toString() : "",
+  };
+}
+
+function postbank2Ynab(input: POSTBANK): YNAB {
+  const value = parseFloat(
+    input["Betrag (€)"].replace(/\./, "").replace(/,/, ".")
+  );
+  return {
+    Date: input.Buchungsdatum,
+    Payee: input.Empfänger,
+    Memo: input.Buchungsdetails,
     Inflow: value > 0 ? Math.abs(value).toString() : "",
     Outflow: value < 0 ? Math.abs(value).toString() : "",
   };
@@ -100,14 +125,18 @@ function readFile(file: File, converter: CONVERTER): Promise<string> {
     };
     reader.onerror = reject;
 
-    reader.readAsText(file);
+    reader.readAsText(
+      file,
+      converter === CONVERTER.POSTBANK ? "windows-1252" : undefined
+    );
   });
 }
 
 async function convertFile(file: File, converter: CONVERTER) {
   const loadedFile = await readFile(file, converter);
   const rows = await neatCsv(loadedFile, {
-    separator: converter === CONVERTER.CONSORS ? ";" : ",",
+    separator: converter === CONVERTER.N26 ? "," : ";",
+    skipLines: converter === CONVERTER.POSTBANK ? 13 : 0,
   });
 
   let output;
@@ -118,6 +147,10 @@ async function convertFile(file: File, converter: CONVERTER) {
 
   if (converter === CONVERTER.N26) {
     output = rows.map((input) => n262Ynab(input as N26));
+  }
+
+  if (converter === CONVERTER.POSTBANK) {
+    output = rows.map((input) => postbank2Ynab(input as POSTBANK));
   }
 
   return createCsv(output, file.name);

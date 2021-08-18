@@ -45,6 +45,9 @@ export default function YNABConverter(): React.ReactElement {
       case CONVERTER.N26:
         setConverter(CONVERTER.N26);
         break;
+      case CONVERTER.POSTBANK:
+        setConverter(CONVERTER.POSTBANK);
+        break;
     }
   }
 
@@ -71,6 +74,7 @@ export default function YNABConverter(): React.ReactElement {
           >
             <option value={CONVERTER.CONSORS}>Consors</option>
             <option value={CONVERTER.N26}>N26</option>
+            <option value={CONVERTER.POSTBANK}>POSTBANK</option>
           </Select>
         </FormControl>
         <Box width="100%" textAlign="right">
